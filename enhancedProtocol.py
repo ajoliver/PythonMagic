@@ -49,7 +49,6 @@ def verify_packet(packet):
 
 def get_data(packet):
     length = len(packet)
-    start = 2
-
+    start = 1
     end = length - 1
     return bytearray(packet[start:end])

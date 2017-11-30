@@ -1,5 +1,8 @@
 import serial
 import time
+
+import sys
+
 import enhancedProtocol
 
 serial_port = None
@@ -10,15 +13,22 @@ serial_port = None
 #
 def wake():
     global serial_port
-    serial_port = serial.Serial('/dev/ttyS0', 1200, serial.EIGHTBITS, parity=serial.PARITY_NONE,
+    platform = sys.platform
+    port = '/dev/ttyS0'
+    if platform == 'win32':
+        port = "COM1"
+
+    serial_port = serial.Serial(port, 1200, serial.EIGHTBITS, parity=serial.PARITY_NONE,
                                 stopbits=serial.STOPBITS_ONE
-                                , timeout=0.8, xonxoff=0, rtscts=0, dsrdtr=0)
+                                , timeout=1.2, xonxoff=0, rtscts=0, dsrdtr=0)
     serial_port.setDTR(True)
     serial_port.setRTS(True)
 
     retry = 0
     while retry < 4:
-        print("Try " + str(retry))
+        if retry > 0:
+            print("Try " + str(retry))
+            
         x = serial_port.write(bytearray([5, 'l']))
         time.sleep(0.2)
 
@@ -37,7 +47,8 @@ def wake():
 #
 def sleep():
     global serial_port
-    serial_port.write(b"Q\r")
+    sleep_packet = enhancedProtocol.build_packet('Q', [])
+    serial_port.write(sleep_packet)
 
 
 ########################################################################################################################
@@ -61,7 +72,7 @@ def read_packet():
     packet_length = serial_port.read(1)
     if packet_length != '':
         # read the rest of the packet
-        packet = packet_length.join(serial_port.read(ord(packet_length)))
+        packet = serial_port.read(ord(packet_length))
 
         # check the packet integrity
         if enhancedProtocol.verify_packet(packet):
@@ -94,6 +105,24 @@ def read_version_number():
     send_packet = bytearray(enhancedProtocol.build_packet('V', []))
 
     serial_port.write(send_packet)
-
     data = bytearray(read_packet())
-    return bytearray([data[0], data[2], data[4], data[6]])
+
+    if len(data) != 0:
+        return data
+    return []
+
+########################################################################################################################
+# read the notepad line
+def read_notepad_line(line):
+    global serial_port
+
+    send_packet = bytearray(enhancedProtocol.build_packet('P', [line]))
+
+    serial_port.write(send_packet)
+    packet = bytearray(read_packet())
+
+    if enhancedProtocol.verify_packet(packet):
+        return str(packet)
+
+    return ""
+
