@@ -3,9 +3,12 @@ import cello
 try:
     print ("Wake Cello")
     if cello.wake():
+
+        location = [0x40, 0x50]
         memory = []
-        memory.append(bytearray(cello.read_memory(0x0040, 0x10)))
-        memory.append(bytearray(cello.read_memory(0x0050, 0x10)))
+        
+        memory.append(bytearray(cello.read_memory(location[0], 0x10)))
+        memory.append(bytearray(cello.read_memory(location[1], 0x10)))
 
         notepad_lines = []
         line = ""
@@ -31,3 +34,4 @@ try:
         print "Failed to wake Cello"
 except Exception as err:
     print (err)
+
