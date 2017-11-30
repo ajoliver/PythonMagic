@@ -15,7 +15,7 @@ def build_packet(cmd, data, logger_id=0):
     checksum = sum(rv) & 0xFF
     rv.append(checksum)
 
-    return rv
+    return bytearray(rv)
 
 
 ########################################################################################################################
@@ -52,4 +52,4 @@ def get_data(packet):
     start = 2
 
     end = length - 1
-    return packet[start:end]
+    return bytearray(packet[start:end])

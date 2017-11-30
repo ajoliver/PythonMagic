@@ -10,15 +10,16 @@ serial_port = None
 #
 def wake():
     global serial_port
-    serial_port = serial.Serial('COM1', 1200, serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE
+    serial_port = serial.Serial('/dev/ttyS0', 1200, serial.EIGHTBITS, parity=serial.PARITY_NONE,
+                                stopbits=serial.STOPBITS_ONE
                                 , timeout=0.8, xonxoff=0, rtscts=0, dsrdtr=0)
     serial_port.setDTR(True)
     serial_port.setRTS(True)
 
     retry = 0
     while retry < 4:
-        x = serial_port.write(chr(5))
-        x = serial_port.write(b'l')
+        print("Try " + str(retry))
+        x = serial_port.write(bytearray([5, 'l']))
         time.sleep(0.2)
 
         version = read_version_number()
@@ -27,7 +28,6 @@ def wake():
             return True
 
         retry = retry + 1
-        print("Try " + str(retry))
 
     return False
 
@@ -69,9 +69,7 @@ def read_packet():
         else:
             raise Exception("Invalid packet")
 
-    else:
-        raise Exception("No response from the logger")
-
+    return bytearray(0)
 
 ########################################################################################################################
 # build a "read memory" packet to send to a cello
@@ -93,14 +91,9 @@ def read_memory_packet(start, length):
 def read_version_number():
     global serial_port
 
-    # send_packet = enhancedProtocol.buildPacket('V', [])
+    send_packet = bytearray(enhancedProtocol.build_packet('V', []))
 
-    # for byte in sendPacket:
-    #     print (byte)
-    #     serial_port.write(byte)
+    serial_port.write(send_packet)
 
-    serial_port.write([0x03, 0x00, 0x56, 0x59])
-
-    data = read_packet()
-    version = ''.join(i for i in data[1:])
-    return version
+    data = bytearray(read_packet())
+    return bytearray([data[0], data[2], data[4], data[6]])
